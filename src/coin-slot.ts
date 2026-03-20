@@ -69,7 +69,21 @@ export const stopCoinSession = () => {
     deviceId,
   );
 
-  // TODO: send totalCoins to backend API
+  // TODO: improve
+  try {
+    fetch(`${process.env.BASE_URL}/devices/${deviceId}/insert-coin`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        coins: totalCoins,
+      }),
+    });
+    console.log("updated time");
+  } catch (error) {
+    console.error(error);
+  }
 
   deviceId = null;
   totalCoins = 0;
