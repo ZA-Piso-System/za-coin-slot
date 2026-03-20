@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import path from "path";
 import {
+  disableCoinSlot,
   getDeviceId,
   getTotalInsertedCoins,
   isSessionRunning,
@@ -21,6 +22,8 @@ expand(
     ),
   }),
 );
+
+disableCoinSlot();
 
 const app = new Hono();
 

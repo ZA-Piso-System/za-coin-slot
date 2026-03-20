@@ -2,6 +2,8 @@ import fs from "fs";
 
 const GPIO_PIN = 12;
 const GPIO_PATH = `/sys/class/gpio/gpio${GPIO_PIN}`;
+const CONTROL_PIN = 11;
+const CONTROL_PATH = `/sys/class/gpio/gpio${CONTROL_PIN}`;
 const PULSE_TIMEOUT = 300;
 const POLL_INTERVAL = 5;
 const COUNTDOWN = 30_000;
@@ -20,7 +22,14 @@ if (!fs.existsSync(GPIO_PATH)) {
   fs.writeFileSync(`${GPIO_PATH}/direction`, "in");
 }
 
+if (!fs.existsSync(CONTROL_PATH)) {
+  fs.writeFileSync("/sys/class/gpio/export", `${CONTROL_PIN}`);
+  fs.writeFileSync(`${CONTROL_PATH}/direction`, "out");
+}
+
 export const startCoinSession = (id: string) => {
+  enableCoinSlot();
+
   deviceId = id;
   lastValue = Number(fs.readFileSync(`${GPIO_PATH}/value`, "utf8").trim());
   pulseCount = 0;
@@ -52,6 +61,8 @@ export const startCoinSession = (id: string) => {
 };
 
 export const stopCoinSession = () => {
+  disableCoinSlot();
+
   if (pollTimer) clearInterval(pollTimer);
   if (pulseTimer) clearInterval(pulseTimer);
   if (countdownTimer) clearTimeout(countdownTimer);
@@ -99,4 +110,12 @@ export const getDeviceId = () => {
 
 export const getTotalInsertedCoins = () => {
   return totalCoins;
+};
+
+export const enableCoinSlot = () => {
+  fs.writeFileSync(`${CONTROL_PATH}/value`, "1");
+};
+
+export const disableCoinSlot = () => {
+  fs.writeFileSync(`${CONTROL_PATH}/value`, "0");
 };
