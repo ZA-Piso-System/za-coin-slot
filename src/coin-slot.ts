@@ -6,6 +6,7 @@ const PULSE_TIMEOUT = 300;
 const POLL_INTERVAL = 5;
 const COUNTDOWN = 30_000;
 
+let deviceId: string | null = null;
 let pollTimer: NodeJS.Timeout | null = null;
 let pulseTimer: NodeJS.Timeout | null = null;
 let countdownTimer: NodeJS.Timeout | null = null;
@@ -19,7 +20,8 @@ if (!fs.existsSync(GPIO_PATH)) {
   fs.writeFileSync(`${GPIO_PATH}/direction`, "in");
 }
 
-export const startCoinSession = () => {
+export const startCoinSession = (id: string) => {
+  deviceId = id;
   lastValue = Number(fs.readFileSync(`${GPIO_PATH}/value`, "utf8").trim());
   pulseCount = 0;
   totalCoins = 0;
@@ -61,13 +63,26 @@ export const stopCoinSession = () => {
   pulseCount = 0;
   lastPulseTime = 0;
 
-  console.log("Coin session finished. Total coins inserted:", totalCoins);
+  console.log(
+    "Coin session finished. Total coins inserted:",
+    totalCoins,
+    deviceId,
+  );
 
   // TODO: send totalCoins to backend API
 
+  deviceId = null;
   totalCoins = 0;
 };
 
 export const isSessionRunning = () => {
   return pollTimer != null;
+};
+
+export const getDeviceId = () => {
+  return deviceId;
+};
+
+export const getTotalInsertedCoins = () => {
+  return totalCoins;
 };

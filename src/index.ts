@@ -1,24 +1,59 @@
 import { serve } from "@hono/node-server";
+import { config } from "dotenv";
+import { expand } from "dotenv-expand";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
+import path from "path";
 import {
+  getDeviceId,
+  getTotalInsertedCoins,
   isSessionRunning,
   startCoinSession,
   stopCoinSession,
 } from "./coin-slot.js";
+import { Environment } from "./common/types/environment.type.js";
+
+expand(
+  config({
+    path: path.resolve(
+      process.cwd(),
+      process.env.NODE_ENV === Environment.TEST ? ".env.test" : ".env",
+    ),
+  }),
+);
 
 const app = new Hono();
 
-app.get("/add-coin", (c) => {
+app.use(
+  "*",
+  cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(",") ?? [],
+    allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
+
+app.get("/api/v1/total-inserted-coins", (c) => {
+  const totalCoins = getTotalInsertedCoins();
+  return c.json({ total: totalCoins });
+});
+
+app.post("/api/v1/:id/insert-coin", (c) => {
+  const id = c.req.param("id");
   if (isSessionRunning()) {
-    return c.json({ message: "Coin session already running" });
+    return c.json({ message: "Coin session already running" }, 404);
   }
-  startCoinSession();
+  startCoinSession(id);
   return c.json({ message: "Coin session started" });
 });
 
-app.get("/done", (c) => {
+app.post("/api/v1/:id/done", (c) => {
+  const id = c.req.param("id");
+  if (id !== getDeviceId()) {
+    return c.json({ message: "Invalid device id" }, 404);
+  }
   stopCoinSession();
-  return c.json({ message: "Coin session started" });
+  return c.json({ message: "Done inserting coin" });
 });
 
 serve(
