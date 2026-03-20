@@ -69,12 +69,12 @@ export const stopCoinSession = () => {
     deviceId,
   );
 
-  // TODO: improve
   try {
     fetch(`${process.env.BASE_URL}/devices/${deviceId}/insert-coin`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-api-key": process.env.COIN_SLOT_SECRET!,
       },
       body: JSON.stringify({
         coins: totalCoins,
