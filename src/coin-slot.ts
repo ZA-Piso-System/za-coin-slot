@@ -83,10 +83,10 @@ export const stopCoinSession = () => {
         "x-api-key": process.env.COIN_SLOT_SECRET!,
       },
       body: JSON.stringify({
-        coins: totalCoins,
+        amount: totalCoins,
       }),
     });
-    console.log("updated time");
+    console.log("Updated time", deviceId);
   } catch (error) {
     console.error(error);
   }
