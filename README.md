@@ -80,6 +80,11 @@ Check status:
 sudo systemctl status myapp
 ```
 
+Restart:
+```
+sudo systemctl restart myapp
+```
+
 View logs:
 ```
 journalctl -u myapp -f
