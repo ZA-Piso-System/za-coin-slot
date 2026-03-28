@@ -38,6 +38,11 @@ cd za-coin-slot
 npm install
 ```
 
+### 3. Build the project
+```
+npm run build
+```
+
 ## 🚀 5. Create Systemd Service
 Create a systemd service so the app runs automatically.
 ```
