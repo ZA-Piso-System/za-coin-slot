@@ -8,7 +8,7 @@ const POLL_INTERVAL = 5;
 const COUNTDOWN = 30_000;
 
 let deviceId: string | null = null;
-let pollTimer: NodeJS.Timeout | null = null;
+let pollTimer: NodeJS.Immediate | null = null;
 let pulseTimer: NodeJS.Timeout | null = null;
 let countdownTimer: NodeJS.Timeout | null = null;
 let lastValue = 0;
@@ -33,13 +33,13 @@ export const startCoinSession = (id: string) => {
   totalCoins = 0;
   lastPulseTime = Date.now();
 
-  pollTimer = setInterval(() => {
+  const poll = () => {
     const value = Number(fs.readFileSync(`${GPIO_PATH}/value`, "utf8").trim());
 
     if (value === 1 && lastValue === 0) {
       const now = Date.now();
 
-      if (now - lastPulseTime >= 15) {
+      if (now - lastPulseTime >= 3) {
         lastPulseTime = now;
 
         totalCoins += 1;
@@ -51,15 +51,18 @@ export const startCoinSession = (id: string) => {
     }
 
     lastValue = value;
-  }, POLL_INTERVAL);
 
+    pollTimer = setImmediate(poll);
+  };
+
+  pollTimer = setImmediate(poll);
   countdownTimer = setTimeout(stopCoinSession, COUNTDOWN);
 };
 
 export const stopCoinSession = () => {
   disableCoinSlot();
 
-  if (pollTimer) clearInterval(pollTimer);
+  if (pollTimer) clearImmediate(pollTimer);
   if (pulseTimer) clearInterval(pulseTimer);
   if (countdownTimer) clearTimeout(countdownTimer);
 
