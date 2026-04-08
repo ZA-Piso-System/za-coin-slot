@@ -4,10 +4,10 @@ const GPIO_PIN = 12;
 const GPIO_PATH = `/sys/class/gpio/gpio${GPIO_PIN}`;
 const CONTROL_PIN = 11;
 const CONTROL_PATH = `/sys/class/gpio/gpio${CONTROL_PIN}`;
-const POLL_INTERVAL = 5;
 const COUNTDOWN = 30_000;
 
 let deviceId: string | null = null;
+let userId: string | null = null;
 let pollTimer: NodeJS.Immediate | null = null;
 let pulseTimer: NodeJS.Timeout | null = null;
 let countdownTimer: NodeJS.Timeout | null = null;
@@ -25,10 +25,16 @@ if (!fs.existsSync(CONTROL_PATH)) {
   fs.writeFileSync(`${CONTROL_PATH}/direction`, "out");
 }
 
-export const startCoinSession = (id: string) => {
+export const startCoinSession = (id: string, type: "device" | "user") => {
   enableCoinSlot();
 
-  deviceId = id;
+  if (type === "device") {
+    deviceId = id;
+  }
+  if (type === "user") {
+    userId = id;
+  }
+
   lastValue = Number(fs.readFileSync(`${GPIO_PATH}/value`, "utf8").trim());
   totalCoins = 0;
   lastPulseTime = Date.now();
@@ -72,29 +78,56 @@ export const stopCoinSession = () => {
   lastValue = 0;
   lastPulseTime = 0;
 
-  console.log(
-    "Coin session finished. Total coins inserted:",
-    totalCoins,
-    deviceId,
-  );
+  if (deviceId) {
+    console.log(
+      "Coin session finished. Total coins inserted:",
+      totalCoins,
+      `Device ID: ${deviceId}`,
+    );
 
-  try {
-    fetch(`${process.env.BASE_URL}/devices/${deviceId}/insert-coin`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.COIN_SLOT_SECRET!,
-      },
-      body: JSON.stringify({
-        amount: totalCoins,
-      }),
-    });
-    console.log("Updated time", deviceId);
-  } catch (error) {
-    console.error(error);
+    try {
+      fetch(`${process.env.BASE_URL}/devices/${deviceId}/insert-coin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.COIN_SLOT_SECRET!,
+        },
+        body: JSON.stringify({
+          amount: totalCoins,
+        }),
+      });
+      console.log("Updated time", deviceId);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  if (userId) {
+    console.log(
+      "Coin session finished. Total coins inserted:",
+      totalCoins,
+      `User ID: ${userId}`,
+    );
+
+    try {
+      fetch(`${process.env.BASE_URL}/users/${userId}/topup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.COIN_SLOT_SECRET!,
+        },
+        body: JSON.stringify({
+          amount: totalCoins,
+        }),
+      });
+      console.log("Updated time", userId);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   deviceId = null;
+  userId = null;
   totalCoins = 0;
 };
 
@@ -104,6 +137,10 @@ export const isSessionRunning = () => {
 
 export const getDeviceId = () => {
   return deviceId;
+};
+
+export const getUserId = () => {
+  return userId;
 };
 
 export const getTotalInsertedCoins = () => {

@@ -8,6 +8,7 @@ import {
   disableCoinSlot,
   getDeviceId,
   getTotalInsertedCoins,
+  getUserId,
   isSessionRunning,
   startCoinSession,
   stopCoinSession,
@@ -41,19 +42,22 @@ app.get("/api/v1/total-inserted-coins", (c) => {
   return c.json({ total: totalCoins });
 });
 
-app.post("/api/v1/:id/insert-coin", (c) => {
+app.post("/api/v1/:id/insert-coin", async (c) => {
   const id = c.req.param("id");
+  const { type } = await c.req.json();
+
   if (isSessionRunning()) {
     return c.json({ message: "Coin session already running" }, 404);
   }
-  startCoinSession(id);
+
+  startCoinSession(id, type);
   return c.json({ message: "Coin session started" });
 });
 
 app.post("/api/v1/:id/done", (c) => {
   const id = c.req.param("id");
-  if (id !== getDeviceId()) {
-    return c.json({ message: "Invalid device id" }, 404);
+  if (id !== getDeviceId() && id !== getUserId()) {
+    return c.json({ message: "Invalid device or user id" }, 404);
   }
   stopCoinSession();
   return c.json({ message: "Done inserting coin" });
