@@ -1,4 +1,5 @@
 import fs from "fs";
+import { fetchWithRetry } from "./lib/fetch.lib.js";
 
 const GPIO_PIN = 12;
 const GPIO_PATH = `/sys/class/gpio/gpio${GPIO_PIN}`;
@@ -65,7 +66,7 @@ export const startCoinSession = (id: string, type: "device" | "user") => {
   countdownTimer = setTimeout(stopCoinSession, COUNTDOWN);
 };
 
-export const stopCoinSession = () => {
+export const stopCoinSession = async () => {
   disableCoinSlot();
 
   if (pollTimer) clearImmediate(pollTimer);
@@ -86,16 +87,19 @@ export const stopCoinSession = () => {
     );
 
     try {
-      fetch(`${process.env.BASE_URL}/devices/${deviceId}/insert-coin`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.COIN_SLOT_SECRET!,
+      await fetchWithRetry(
+        `${process.env.BASE_URL}/devices/${deviceId}/insert-coin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.COIN_SLOT_SECRET!,
+          },
+          body: JSON.stringify({
+            amount: totalCoins,
+          }),
         },
-        body: JSON.stringify({
-          amount: totalCoins,
-        }),
-      });
+      );
       console.log("Updated time", deviceId);
     } catch (error) {
       console.error(error);
@@ -110,7 +114,7 @@ export const stopCoinSession = () => {
     );
 
     try {
-      fetch(`${process.env.BASE_URL}/users/${userId}/topup`, {
+      await fetchWithRetry(`${process.env.BASE_URL}/users/${userId}/topup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
