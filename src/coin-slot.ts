@@ -46,7 +46,7 @@ export const startCoinSession = (id: string, type: "device" | "user") => {
     if (value === 1 && lastValue === 0) {
       const now = Date.now();
 
-      if (now - lastPulseTime >= 3) {
+      if (now - lastPulseTime >= 10) {
         lastPulseTime = now;
 
         totalCoins += 1;
